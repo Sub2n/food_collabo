@@ -83,8 +83,8 @@
         else {
             var position;
             if(markerList != null){
-                for(var i in markerList){
-                    var list = markerList[i];
+                markerList.forEach(function(list){
+                    console.log(list);
                     var review = list['review'];
                     position = list['point'];
                     
@@ -124,12 +124,9 @@
                     });
 
                     infoWindow.open(map, marker);
-
-                }
-               
-            }
-           
+            });
             map.setCenter(new naver.maps.Point(position.x, position.y));
+        };
         }
 
     }
@@ -205,16 +202,20 @@
                 map.setCenter(new naver.maps.Point(item.point.x, item.point.y));
 
                 naver.maps.Event.addListener(marker, 'click', function(e) {
-                    for(var i in markerList){
-                        var temp_mark = markerList[i];
+                    var isReviewed = false;
+                    markerList.forEach(function(temp_mark){
                         var review = temp_mark['review'];
-                        
+                        console.log(temp_mark['point']);
+                        console.log(marker.getPosition());
+
                         if(temp_mark['point'].x == marker.getPosition().x && temp_mark['point'].y == marker.getPosition().y){
-                            
+                            console.log('검사됨');
+                            isReviewed = true;
                             return;
                         }
-                    }
-                    dialog.showModal();
+                    });
+
+                    if(!isReviewed) dialog.showModal();
                 });
             });
         });
