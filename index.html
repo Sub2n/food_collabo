@@ -8,6 +8,7 @@
 
     <script type="text/javascript" src="https://openapi.map.naver.com/openapi/v3/maps.js?ncpClientId=1u5gb6bmoa&submodules=geocoder"></script>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+    <script src="http://dmaps.daum.net/map_js_init/postcode.v2.js"></script>
 
     <!-- 메테리얼 불러오기 -->
     <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
@@ -35,9 +36,10 @@
             <h2>맛집 리뷰</h2>
             <div class="demo-card-wide mdl-card mdl-shadow--2dp"> <!-- 맛집 리뷰 창 -->
                 <div class="mdl-card__title">
-                    <h2 class="mdl-card__title-text">맛집이름</h2>
+                    <h2 class="mdl-card__title-text name">맛집이름</h2>
+                    <h2 class="mdl-card__title-text star">: 평점</h2>
                 </div>
-                <div class="mdl-card__supporting-text">
+                <div class="mdl-card__supporting-text review">
                     리뷰 내용 작성하는 곳
                 </div>
                 <div class="mdl-card__actions mdl-card--border">
@@ -53,12 +55,73 @@
             </div>
         </div>
     </div> <!-- 전체를 감싸는 div 종료 -->
+    <dialog class="mdl-dialog">
+        <div class="mdl-dialog__content">
+            <form action="#">
+                <div class="mdl-textfield mdl-js-textfield mdl-textfield--floating-label">
+                    <label>맛집이름</label><input id ="food_name" class="mdl-textfield__input" type="text" >
+                    <label>맛집이름</label><input id ="food_star" class="mdl-textfield__input" type="text" >
+                    <label>맛집이름</label><input id ="food_review" class="mdl-textfield__input" type="text" >
+                    <label class="mdl-textfield__label" for="sample3">Edit what to do...</label>
+                </div>
+            </form>
+        </div>
+        <button id="close-btn" type="button" class="mdl-button close">Edit</button>
+    </dialog>
+
+<script>
+    var storage_key = "markers";
+    // marker 저장해놓을 배열
+    var markerList = [];
+
+    function loadMarkers(map){
+        markerList = JSON.parse(localStorage.getItem(storage_key));
+        if(!markerList) markerList = [];
+        else{
+             console.log(markerList);
+            var position;
+
+            if(markerList != null){
+                for(var i in markerList){
+                    var list = markerList[i];
+                    var review = list['review'];
+                    position = list['point'];
+                    console.log(list);
+                    console.log(review);
+                    
+                    // marker 설정
+                    var marker = new naver.maps.Marker({
+                        position: list['point'],
+                        map: map
+                    });
 
 
+                    var infoWindow = new naver.maps.InfoWindow({
+                        content: '<div style="width:150px;text-align:center;padding:10px;"><h2>'+review['name']+'</h2><h2>: '+review['star']+'</h2><div><p>'+review['review']+'</p></div></div>'
+                    });
+                }
+            }
+            console.log(position);
+            map.setCenter(new naver.maps.Point(position.x, position.y));
+            }
+       
+    }
 
-    <script>
-        // 지도 옵션 적용하기
-        var option = {
+    function saveMarkers(marker, review){
+        var save_info ={};
+        save_info['point'] = marker['target'].position;
+        save_info['review'] = review;
+
+        console.log(save_info);
+
+        markerList.push(save_info);
+        console.log(markerList);
+        localStorage.setItem(storage_key, JSON.stringify(markerList));
+    }
+
+    $(document).ready(function(){
+
+        var mapOptions = {
             center: new naver.maps.LatLng(37.5487382,127.0534817),
             zoom: 14,
             scaleControl: true,
@@ -69,9 +132,91 @@
             zoomControlOptions: {
                 position: naver.maps.Position.RIGHT_CENTER
             },
+            minZoom: 1
         };
+
         // 지도 생성하기
-        var naver_map = new naver.maps.Map($('#map')[0], option);
-    </script>
+        var map = new naver.maps.Map('map', mapOptions);
+        // var map = new naver.maps.Map($('#map')[0], mapOptions);
+        loadMarkers(map);
+
+        $('#btn_address').click(function(e){
+
+            new daum.Postcode({
+                oncomplete: function(data) {
+                // 팝업에서 검색결과 항목을 클릭했을때 실행할 코드를 작성하는 부분입니다.
+                // 예제를 참고하여 다양한 활용법을 확인해 보세요.
+                    console.log(data);
+                    $('#address').prop('readonly',false);
+                    $('#address').val(data.address);
+                    // change event 발생시키기 위해 trigger 줌
+                    $('#address').prop('readonly',true).trigger('change');;
+                    
+                }
+            }).open();
+            
+        });
+
+        var dialog = document.querySelector('dialog');
+        var pointer;    // marker 저장
+
+        $(document).on('change', '#address', function(){
+            
+
+            naver.maps.Service.geocode({
+                address: $('#address').val()
+            }, function(status, response) {
+                if (status !== naver.maps.Service.Status.OK) {
+                    return alert('Something wrong!');
+                }
+
+                var result = response.result, // 검색 결과의 컨테이너
+                    items = result.items; // 검색 결과의 배열
+
+                console.log(items[0]);
+                // do Something
+                var item = items[0];
+                
+                var marker = new naver.maps.Marker({
+                    position: new naver.maps.Point(item.point.x, item.point.y),
+                    map: map
+                });
+
+    
+                map.setCenter(new naver.maps.Point(item.point.x, item.point.y));
+                pointer = naver.maps.Event.addListener(marker, 'click', function(e) {
+                    for(var i in markerList){
+                        var temp_marker = markerList[i];
+                        if (temp_marker['point'] == new naver.maps.Point(item.point.x, item.point.y)){
+                            var review = temp_marker['review'];
+                        }
+                    }
+                    dialog.showModal();
+                });
+            });
+
+        });
+
+       
+
+       
+
+        dialog.querySelector('.close').addEventListener('click', function() {
+            console.log(pointer);
+            var review = {};
+
+            review['name'] = $('#food_name').val();
+            review['star'] = $('#food_star').val();
+            review['review'] = $('#food_review').val();
+
+            saveMarkers(pointer, review);
+            dialog.close();
+        });
+
+        
+
+    });
+   
+</script>
 </body>
 </html>
