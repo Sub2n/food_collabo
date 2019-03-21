@@ -37,7 +37,18 @@ h2{
     height:50px;
     line-height:50px;
 }
+.iw_inner{
+    width:100%;
+    padding:20px;
+}
+.food_title, .food_star{
+    font-size:24px;
+    font-weight: 400;
+}
 
+
+
+/*
 #review_wrap{
     width:90%;
     margin: 10px auto;
@@ -47,7 +58,7 @@ h2{
     float: left;
     width:33%;
 }
-/* 메테리얼 카드 css */
+
 .demo-card-wide.mdl-card {
     width: 512px;
   }
@@ -59,3 +70,4 @@ h2{
   .demo-card-wide > .mdl-card__menu {
     color: #fff;
   }
+  */
