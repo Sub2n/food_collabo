@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no">git
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no">
     <title>맛집을 지도에 등록하기</title>
 
     <script type="text/javascript" src="https://openapi.map.naver.com/openapi/v3/maps.js?ncpClientId=1u5gb6bmoa&submodules=geocoder"></script>
@@ -71,12 +71,16 @@
 
 <script>
     var storage_key = "markers";
-    // marker 저장해놓을 배열
+    // marker-review 저장해놓을 배열
     var markerList = [];
+
+
     function loadMarkers(map){
         markerList = JSON.parse(localStorage.getItem(storage_key));
-        if(!markerList) markerList = [];
-        else{
+        if(!markerList) {
+            markerList = [];
+        }
+        else {
             var position;
             if(markerList != null){
                 for(var i in markerList){
@@ -89,6 +93,8 @@
                         position: list['point'],
                         map: map
                     });
+
+                    console.log(marker);
                     var contentString = [
                         '<div class="iw_inner">',
                         '   <sapn class="food_title">',
@@ -102,23 +108,32 @@
                         '   </p>',
                         '</div>'
                     ].join('');
+
                     var infoWindow = new naver.maps.InfoWindow({
                         content: contentString
                     });
+
                     naver.maps.Event.addListener(marker, "click", function(e) {
                         if (infoWindow.getMap()) {
+                            console.log(marker);
                             infoWindow.close();
                         } else {
+                            console.log(marker);
                             infoWindow.open(map, marker);
                         }
                     });
+
                     infoWindow.open(map, marker);
+
                 }
+               
             }
+           
             map.setCenter(new naver.maps.Point(position.x, position.y));
-            }
-       
+        }
+
     }
+
     function saveMarkers(marker, review){
         var save_info ={};
         save_info['point'] = marker.getPosition();
@@ -129,6 +144,7 @@
         localStorage.setItem(storage_key, JSON.stringify(markerList));
     }
     $(document).ready(function(){
+
         var mapOptions = {
             center: new naver.maps.LatLng(37.5487382,127.0534817),
             zoom: 14,
@@ -144,8 +160,10 @@
         };
         // 지도 생성하기
         var map = new naver.maps.Map('map', mapOptions);
+
         // var map = new naver.maps.Map($('#map')[0], mapOptions);
         loadMarkers(map);
+
         $('#btn_address').click(function(e){
             new daum.Postcode({
                 oncomplete: function(data) {
@@ -160,9 +178,10 @@
             }).open();
             
         });
+
         var dialog = document.querySelector('dialog');
         var pointer;    // marker 저장
-        var mark;
+
         $(document).on('change', '#address', function(){
             
             naver.maps.Service.geocode({
@@ -184,53 +203,30 @@
                 pointer = marker;
                
                 map.setCenter(new naver.maps.Point(item.point.x, item.point.y));
+
                 naver.maps.Event.addListener(marker, 'click', function(e) {
                     for(var i in markerList){
-                        var mark = markerList[i];
-                        var review = mark['review'];
-                        console.log(mark['point']);
-                        console.log(marker.getPosition());
-                        if(mark['point'].x == marker.getPosition().x && mark['point'].y == marker.getPosition().y){
-                            console.log("검사는 됨");
+                        var temp_mark = markerList[i];
+                        var review = temp_mark['review'];
+                        
+                        if(temp_mark['point'].x == marker.getPosition().x && temp_mark['point'].y == marker.getPosition().y){
                             
-                            var contentString = [
-                                '<div class="iw_inner">',
-                                '   <sapn class="food_title">',
-                                review['name'],
-                                '</span>',
-                                '   <sapn class="food_star">: ',
-                                review['star'],
-                                '</span>',
-                                '   <p>',
-                                review['review'],
-                                '   </p>',
-                                '</div>'
-                            ].join('');
-                            var infoWindow = new naver.maps.InfoWindow({
-                                content: contentString
-                            });
-                            naver.maps.Event.addListener(marker, "click", function(e) {
-                                if (infoWindow.getMap()) {
-                                    infoWindow.close();
-                                } else {
-                                    infoWindow.open(map, marker);
-                                }
-                            });
-                            infoWindow.open(map, marker);
                             return;
                         }
                     }
-
                     dialog.showModal();
                 });
             });
         });
+
         dialog.querySelector('.close').addEventListener('click', function() {
             var review = {};
             review['name'] = $('#food_name').val();
             review['star'] = $('#food_star').val();
             review['review'] = $('#food_review').val();
+
             saveMarkers(pointer, review);
+
             var contentString = [
                 '<div class="iw_inner">',
                 '   <sapn class="food_title">',
@@ -244,9 +240,11 @@
                 '   </p>',
                 '</div>'
             ].join('');
+
             var infoWindow = new naver.maps.InfoWindow({
                 content: contentString
             });
+
             naver.maps.Event.addListener(pointer, "click", function(e) {
                 if (infoWindow.getMap()) {
                     infoWindow.close();
